@@ -1,45 +1,55 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
-    <script type="module" src="script.js" defer></script>
-    <title>Tetri2</title>
+    <script src="script.js" defer></script>
+    <title>Tetromino Archive</title>
 </head>
 <body>
-    <header>
-        <h1>Tetrominoes</h1>
-    </header>
+    <h1>Tetromino Archive</h1>
 
-    <main id="container">
-        <section id="controls">
-            <button id="show-add-form">Nieuw blok toevoegen</button>
-        </section>
+    <form id="newBlock">
+        <legend>Voeg nieuw tetromino toe:</legend>
+        <label for="name">Naam:</label>
+        <input type="text" name="name" id="name" maxlength="2" required>
 
-        <section id="grid" aria-label="Tetromino overzicht"></section>
+        <label for="color">Kleur:</label>
+        <input type="color" name="color" id="color" value="#00ff00" required>
 
-        <aside id="detail" aria-live="polite"></aside>
+        <label for="image">Afbeelding (URL, optioneel):</label>
+        <input type="text" name="image" id="image" placeholder="images/Tetromino_X.svg">
 
-        <section id="add-form-panel" class="hidden">
-            <h2>Voeg een nieuw tetromino toe</h2>
-            <form id="add-form">
-                <label>Naam: <input name="name" required maxlength="2"></label>
-                <label>Kleur: <input name="color" type="color" value="#ff0000" required></label>
-                <label>Beschrijving: <textarea name="description" required></textarea></label>
-                <label>Afbeelding (URL): <input name="image" type="url" placeholder="images/my.svg"></label>
+        <label for="description">Beschrijving:</label>
+        <input type="text" name="description" id="description">
 
-                <fieldset>
-                    <legend>Matrix (4x4)</legend>
-                    <div id="matrix-inputs" class="matrix-inputs"></div>
-                </fieldset>
+        <fieldset>
+            <legend>Matrix (4x4)</legend>
+            <div id="matrixInputs"></div>
+        </fieldset>
 
-                <div class="form-actions">
-                    <button type="submit">Verstuur</button>
-                    <button type="button" id="cancel-add">Annuleer</button>
-                </div>
-            </form>
-        </section>
-    </main>
+        <input type="submit" id="addButton" value="Add">
+    </form>
+
+    <br>
+
+    <div id="outputDiv">
+        <table id="outputTable">
+            <thead>
+                <tr>
+                    <th>Afbeelding</th>
+                    <th>Naam</th>
+                    <th>Kleur</th>
+                    <th>Beschrijving</th>
+                    <th>Matrix</th>
+                </tr>
+            </thead>
+            <tbody>
+
+            </tbody>
+        </table>
+    </div>
 </body>
 </html>

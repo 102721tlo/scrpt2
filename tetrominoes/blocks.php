@@ -6,24 +6,42 @@
  * Endpoints:
  *   GET  blocks.php
  *        -> alle blokken als JSON
-<?php
+ *
+ *   GET  blocks.php?block=L
+ *        -> details van één blok (op basis van letter/naam)
+ *
+ *   POST blocks.php  (Content-Type: application/json of form-data)
+ *        -> nieuw blok toevoegen, wordt opgeslagen in blocks.json
+ */
 
+// ------------------------------------------------------------
+// Basisconfiguratie
+// ------------------------------------------------------------
+
+// Pad naar het JSON-bestand met blokdata
 const BLOCKS_FILE = __DIR__ . '/blocks.json';
 
+// Eenvoudige CORS headers zodat je dit ook lokaal kunt testen
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
+// OPTIONS (preflight) direct afvangen
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
   http_response_code(204);
   exit;
 }
 
+// Antwoord altijd als JSON
 header('Content-Type: application/json; charset=utf-8');
 
+// ------------------------------------------------------------
+// Helper: blocks.json laden of initialiseren
+// ------------------------------------------------------------
 function loadBlocks(): array
 {
   if (!file_exists(BLOCKS_FILE)) {
+    // Als het bestand nog niet bestaat: initialiseer met de 7 standaard tetrominoes
     $defaultBlocks = getDefaultBlocks();
     file_put_contents(BLOCKS_FILE, json_encode($defaultBlocks, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
     return $defaultBlocks;
@@ -33,12 +51,16 @@ function loadBlocks(): array
   $data = json_decode($raw, true);
 
   if (!is_array($data)) {
+    // Fallback als JSON corrupt is
     $data = getDefaultBlocks();
   }
 
   return $data;
 }
 
+// ------------------------------------------------------------
+// Helper: blocks.json opslaan
+// ------------------------------------------------------------
 function saveBlocks(array $blocks): bool
 {
   return (bool) file_put_contents(
@@ -47,6 +69,9 @@ function saveBlocks(array $blocks): bool
   );
 }
 
+// ------------------------------------------------------------
+// Default tetromino data (7 blokken)
+// ------------------------------------------------------------
 function getDefaultBlocks(): array
 {
   return [
@@ -55,6 +80,7 @@ function getDefaultBlocks(): array
       'color'       => '#00FFFF',
       'description' => 'De I-block is een lange rechte staaf van vier blokjes.',
       'image'       => 'images/Tetromino_I.svg',
+      // 4x4 matrix, 1 = blok, 0 = leeg
       'matrix'      => [
         [0, 0, 0, 0],
         [1, 1, 1, 1],
@@ -137,6 +163,9 @@ function getDefaultBlocks(): array
   ];
 }
 
+// ------------------------------------------------------------
+// Helper: JSON-body inlezen (voor POST)
+// ------------------------------------------------------------
 function readJsonBody(): array
 {
   $raw = file_get_contents('php://input');
@@ -152,6 +181,9 @@ function readJsonBody(): array
   return $data;
 }
 
+// ------------------------------------------------------------
+// Router op basis van HTTP-methode
+// ------------------------------------------------------------
 $method = $_SERVER['REQUEST_METHOD'];
 
 switch ($method) {
@@ -169,10 +201,14 @@ switch ($method) {
     break;
 }
 
+// ------------------------------------------------------------
+// GET handler
+// ------------------------------------------------------------
 function handleGet(): void
 {
   $blocks = loadBlocks();
 
+  // ?block=L -> 1 blok teruggeven
   if (isset($_GET['block']) && $_GET['block'] !== '') {
     $needle = strtoupper(trim($_GET['block']));
 
@@ -188,16 +224,22 @@ function handleGet(): void
     return;
   }
 
+  // Anders: alle blokken
   echo json_encode($blocks, JSON_UNESCAPED_UNICODE);
 }
 
+// ------------------------------------------------------------
+// POST handler – nieuw blok toevoegen
+// ------------------------------------------------------------
 function handlePost(): void
 {
+  // Ondersteun zowel JSON body als form-data
   $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
 
   if (stripos($contentType, 'application/json') !== false) {
     $input = readJsonBody();
   } else {
+    // form-data / x-www-form-urlencoded
     $input = $_POST;
   }
 
@@ -207,9 +249,10 @@ function handlePost(): void
   $image       = isset($input['image']) ? trim($input['image']) : '';
   $matrix      = $input['matrix'] ?? null;
 
-  if ($name === '' || $color === '' || $description === '' || $image === '' || $matrix === null) {
+  // Eenvoudige validatie: image is optional, description optional. Require name, color and matrix.
+  if ($name === '' || $color === '' || $matrix === null) {
     http_response_code(400);
-    echo json_encode(['error' => 'Missing required fields (name, color, description, image, matrix)']);
+    echo json_encode(['error' => 'Missing required fields (name, color, matrix)']);
     return;
   }
 
@@ -229,56 +272,7 @@ function handlePost(): void
 
   $blocks = loadBlocks();
 
-  foreach ($blocks as $block) {
-    if (strtoupper($block['name']) === $name) {
-      http_response_code(409);
-      echo json_encode(['error' => 'Block with this name already exists']);
-      return;
-    }
-  }
-
-  $newBlock = [
-    'name'        => $name,
-    'color'       => $color,
-    'description' => $description,
-    'image'       => $image,
-    'matrix'      => $matrix,
-  ];
-
-  $blocks[] = $newBlock;
-
-  if (!saveBlocks($blocks)) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Could not save data']);
-    return;
-  }
-
-  http_response_code(201);
-  echo json_encode($newBlock, JSON_UNESCAPED_UNICODE);
-}
-  if (!is_array($matrix) || count($matrix) !== 4) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Matrix must be a 4x4 array']);
-    return;
-  }
-
-  foreach ($matrix as $row) {
-    if (!is_array($row) || count($row) !== 4) {
-      http_response_code(400);
-      echo json_encode(['error' => 'Matrix must be a 4x4 array']);
-      return;
-    }
-  }
-
-  $blocks = loadBlocks();
-
-  foreach ($blocks as $block) {
-    if (strtoupper($block['name']) === $name) {
-      http_response_code(409);
-      echo json_encode(['error' => 'Block with this name already exists']);
-      return;
-    }
-  }
+  // Allow duplicate names: do not block on existing name
 
   $newBlock = [
     'name'        => $name,
