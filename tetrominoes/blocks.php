@@ -1,5 +1,13 @@
 <?php
 
+/**
+ * SCRIPTING2 – Aangeleverde backend voor Tetromino-opdracht
+ *
+ * Endpoints:
+ *   GET  blocks.php
+ *        -> alle blokken als JSON
+<?php
+
 const BLOCKS_FILE = __DIR__ . '/blocks.json';
 
 header('Access-Control-Allow-Origin: *');
@@ -205,6 +213,49 @@ function handlePost(): void
     return;
   }
 
+  if (!is_array($matrix) || count($matrix) !== 4) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Matrix must be a 4x4 array']);
+    return;
+  }
+
+  foreach ($matrix as $row) {
+    if (!is_array($row) || count($row) !== 4) {
+      http_response_code(400);
+      echo json_encode(['error' => 'Matrix must be a 4x4 array']);
+      return;
+    }
+  }
+
+  $blocks = loadBlocks();
+
+  foreach ($blocks as $block) {
+    if (strtoupper($block['name']) === $name) {
+      http_response_code(409);
+      echo json_encode(['error' => 'Block with this name already exists']);
+      return;
+    }
+  }
+
+  $newBlock = [
+    'name'        => $name,
+    'color'       => $color,
+    'description' => $description,
+    'image'       => $image,
+    'matrix'      => $matrix,
+  ];
+
+  $blocks[] = $newBlock;
+
+  if (!saveBlocks($blocks)) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Could not save data']);
+    return;
+  }
+
+  http_response_code(201);
+  echo json_encode($newBlock, JSON_UNESCAPED_UNICODE);
+}
   if (!is_array($matrix) || count($matrix) !== 4) {
     http_response_code(400);
     echo json_encode(['error' => 'Matrix must be a 4x4 array']);
