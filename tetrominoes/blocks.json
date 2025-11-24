@@ -1,0 +1,226 @@
+[
+    {
+        "name": "I",
+        "color": "#00FFFF",
+        "description": "De I-block is een lange rechte staaf van vier blokjes.",
+        "image": "images\/Tetromino_I.svg",
+        "matrix": [
+            [
+                0,
+                0,
+                0,
+                0
+            ],
+            [
+                1,
+                1,
+                1,
+                1
+            ],
+            [
+                0,
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                0
+            ]
+        ]
+    },
+    {
+        "name": "O",
+        "color": "#FFFF00",
+        "description": "De O-block is een vierkant van 2 bij 2 blokjes.",
+        "image": "images\/Tetromino_O.svg",
+        "matrix": [
+            [
+                0,
+                1,
+                1,
+                0
+            ],
+            [
+                0,
+                1,
+                1,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                0
+            ]
+        ]
+    },
+    {
+        "name": "T",
+        "color": "#800080",
+        "description": "De T-block heeft een T-vorm met drie blokjes op een rij en één in het midden erboven.",
+        "image": "images\/Tetromino_T.svg",
+        "matrix": [
+            [
+                0,
+                1,
+                0,
+                0
+            ],
+            [
+                1,
+                1,
+                1,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                0
+            ]
+        ]
+    },
+    {
+        "name": "S",
+        "color": "#00FF00",
+        "description": "De S-block bestaat uit twee rijen van twee blokjes die verspringen.",
+        "image": "images\/Tetromino_S.svg",
+        "matrix": [
+            [
+                0,
+                1,
+                1,
+                0
+            ],
+            [
+                1,
+                1,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                0
+            ]
+        ]
+    },
+    {
+        "name": "Z",
+        "color": "#FF0000",
+        "description": "De Z-block is de spiegeling van de S-block.",
+        "image": "images\/Tetromino_Z.svg",
+        "matrix": [
+            [
+                1,
+                1,
+                0,
+                0
+            ],
+            [
+                0,
+                1,
+                1,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                0
+            ]
+        ]
+    },
+    {
+        "name": "J",
+        "color": "#0000FF",
+        "description": "De J-block lijkt op een omgekeerde L met een blokje links onderaan.",
+        "image": "images\/Tetromino_J.svg",
+        "matrix": [
+            [
+                1,
+                0,
+                0,
+                0
+            ],
+            [
+                1,
+                1,
+                1,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                0
+            ]
+        ]
+    },
+    {
+        "name": "L",
+        "color": "#FFA500",
+        "description": "De L-block heeft drie blokjes op een rij met één blokje rechts onderaan.",
+        "image": "images\/Tetromino_L.svg",
+        "matrix": [
+            [
+                0,
+                0,
+                1,
+                0
+            ],
+            [
+                1,
+                1,
+                1,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                0
+            ]
+        ]
+    }
+]
