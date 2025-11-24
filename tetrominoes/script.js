@@ -1,4 +1,4 @@
-// ES module for Tetromino UI and API client
+//hier komt je script
 
 const API_BASE = './blocks.php';
 
@@ -15,187 +15,204 @@ class Tetromino {
 		return new Tetromino(obj);
 	}
 
-	// Create a small DOM preview (4x4 grid)
+
 	createPreview(size = 4, cellSize = 12){
-		// Adapted from the memes project; shows tetrominoes in a table and allows adding new ones
+		const wrap = document.createElement('div');
+		wrap.className = 'matrix-preview';
+		wrap.style.setProperty('--cell-size', cellSize + 'px');
 
-		class Tetromino{
-				constructor(data){
-						this.id = data?.id || null;
-						this.name = data?.name || '';
-						this.color = data?.color || '#999999';
-						this.image = data?.image || '';
-						this.description = data?.description || '';
-						this.matrix = Array.isArray(data?.matrix) ? data.matrix : [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+		for (let r=0;r<4;r++){
+			const row = document.createElement('div');
+			row.className = 'matrix-row';
+			for (let c=0;c<4;c++){
+				const cell = document.createElement('div');
+				cell.className = 'matrix-cell';
+				if (this.matrix[r] && this.matrix[r][c]){
+					cell.style.backgroundColor = this.color;
 				}
-
-				rowElement(){
-						const tr = document.createElement('tr');
-
-						let imageUrl = this.image || '';
-						if (imageUrl && !imageUrl.startsWith('images/') && !imageUrl.startsWith('http')) {
-								imageUrl = 'images/' + imageUrl;
-						}
-
-						const imgTd = document.createElement('td');
-						const img = document.createElement('img');
-						img.src = imageUrl || '';
-						img.alt = this.name;
-						img.style.maxWidth = '80px';
-						imgTd.appendChild(img);
-
-						const nameTd = document.createElement('td');
-						nameTd.textContent = this.name;
-
-						const colorTd = document.createElement('td');
-						const sw = document.createElement('span');
-						sw.style.display = 'inline-block';
-						sw.style.width = '24px';
-						sw.style.height = '16px';
-						sw.style.background = this.color;
-						sw.style.border = '1px solid #ccc';
-						colorTd.appendChild(sw);
-
-						const descTd = document.createElement('td');
-						descTd.textContent = this.description;
-
-						const matrixTd = document.createElement('td');
-						matrixTd.appendChild(this.matrixPreview());
-
-						tr.appendChild(imgTd);
-						tr.appendChild(nameTd);
-						tr.appendChild(colorTd);
-						tr.appendChild(descTd);
-						tr.appendChild(matrixTd);
-
-						return tr;
-				}
-
-				matrixPreview(){
-						const wrap = document.createElement('div');
-						wrap.style.display = 'inline-block';
-						for (let r=0;r<4;r++){
-								const row = document.createElement('div');
-								row.style.display = 'flex';
-								for (let c=0;c<4;c++){
-										const cell = document.createElement('div');
-										cell.style.width = '12px';
-										cell.style.height = '12px';
-										cell.style.margin = '1px';
-										cell.style.border = '1px solid #eee';
-										if (this.matrix[r] && this.matrix[r][c]){
-												cell.style.background = this.color;
-										}
-										row.appendChild(cell);
-								}
-								wrap.appendChild(row);
-						}
-						return wrap;
-				}
-
-				save(){
-						const payload = {
-								name: this.name,
-								color: this.color,
-								description: this.description,
-								image: this.image,
-								matrix: this.matrix
-						};
-
-						const xhr = new XMLHttpRequest();
-						xhr.onload = function(){
-								console.log('Block added successfully');
-								getData();
-						};
-						xhr.onerror = function(){
-								console.error('Error adding block');
-								alert('Fout bij toevoegen van blok');
-						};
-						xhr.open('POST', 'blocks.php', true);
-						xhr.setRequestHeader('Content-Type','application/json');
-						xhr.send(JSON.stringify(payload));
-				}
+				row.appendChild(cell);
+			}
+			wrap.appendChild(row);
 		}
+		return wrap;
+	}
+}
 
-		function success(){
-				let blocks = [];
-				try{ blocks = JSON.parse(this.responseText); }catch(e){ console.error(e); }
 
-				const tbody = document.querySelector('#outputTable tbody');
-				tbody.innerHTML = '';
+const api = {
+	async fetchAll(){
+		const res = await fetch(API_BASE);
+		if (!res.ok) throw new Error('Failed to fetch blocks');
+		const data = await res.json();
+		return data.map(d => Tetromino.fromJSON(d));
+	},
 
-				if (Array.isArray(blocks)){
-						blocks.forEach(b=>{
-								const block = new Tetromino(b);
-								tbody.appendChild(block.rowElement());
-						});
-				}
-		}
+	async fetchDetail(name){
+		const url = API_BASE + '?block=' + encodeURIComponent(name);
+		const res = await fetch(url);
+		if (!res.ok) throw new Error('Block not found');
+		const data = await res.json();
+		return Tetromino.fromJSON(data);
+	},
 
-		function error(err){
-				console.error('An error occurred:', err);
-		}
-
-		function buildMatrixInputs(){
-				const container = document.getElementById('matrixInputs');
-				container.innerHTML = '';
-				for (let r=0;r<4;r++){
-						const row = document.createElement('div');
-						row.style.display = 'flex';
-						for (let c=0;c<4;c++){
-								const checkbox = document.createElement('input');
-								checkbox.type = 'checkbox';
-								checkbox.id = `m-${r}-${c}`;
-								checkbox.name = `m-${r}-${c}`;
-								checkbox.style.width = '18px';
-								checkbox.style.height = '18px';
-								row.appendChild(checkbox);
-						}
-						container.appendChild(row);
-				}
-		}
-
-		function readMatrixFromInputs(){
-				const matrix = [];
-				for (let r=0;r<4;r++){
-						const row = [];
-						for (let c=0;c<4;c++){
-								const input = document.getElementById(`m-${r}-${c}`);
-								row.push(input && input.checked ? 1 : 0);
-						}
-						matrix.push(row);
-				}
-				return matrix;
-		}
-
-		function addBlock(e){
-				e.preventDefault();
-				const data = {
-						name: document.getElementById('name').value.trim().toUpperCase(),
-						color: document.getElementById('color').value,
-						image: document.getElementById('image').value.trim(),
-						description: document.getElementById('description').value.trim(),
-						matrix: readMatrixFromInputs()
-				};
-
-				const block = new Tetromino(data);
-				block.save();
-				document.getElementById('newBlock').reset();
-				buildMatrixInputs();
-		}
-
-		function getData(){
-				const xhr = new XMLHttpRequest();
-				xhr.onload = success;
-				xhr.onerror = error;
-				xhr.open('GET','blocks.php',true);
-				xhr.send();
-		}
-
-		// init
-		window.addEventListener('load', ()=>{
-				buildMatrixInputs();
-				getData();
-				const form = document.getElementById('newBlock');
-				if (form) form.addEventListener('submit', addBlock);
+	async create(block){
+		const res = await fetch(API_BASE, {
+			method: 'POST',
+			headers: {'Content-Type':'application/json'},
+			body: JSON.stringify(block),
 		});
+		if (!res.ok) {
+			const err = await res.json().catch(()=>({error:'unknown'}));
+			throw new Error(err.error || 'Failed to create block');
+		}
+		const created = await res.json();
+		return Tetromino.fromJSON(created);
+	}
+};
+
+
+const state = {blocks: []};
+
+function el(tag, props={}, ...children){
+	const e = document.createElement(tag);
+	for (const k in props){
+		if (k === 'class') e.className = props[k];
+		else if (k.startsWith('on') && typeof props[k] === 'function') e.addEventListener(k.slice(2).toLowerCase(), props[k]);
+		else e.setAttribute(k, props[k]);
+	}
+	for (const c of children) if (c) e.append(c);
+	return e;
+}
+
+function renderGrid(container){
+	container.innerHTML = '';
+	const grid = document.createElement('div');
+	grid.className = 'cards';
+
+	state.blocks.forEach(block => {
+		const card = el('article', {class: 'card', tabindex:0});
+		const header = el('div',{class:'card-header'}, el('strong',{}, block.name));
+		const preview = block.createPreview();
+		const img = block.image ? el('img',{src:block.image, alt:block.name, class:'card-img'}) : null;
+		const desc = el('p',{class:'card-desc'}, block.description);
+		const meta = el('div',{class:'card-meta'}, el('span',{}, block.color));
+
+		card.appendChild(header);
+		if (img) card.appendChild(img);
+		card.appendChild(preview);
+		card.appendChild(desc);
+		card.appendChild(meta);
+
+		card.addEventListener('click', ()=> showDetail(block.name));
+		card.addEventListener('keydown', (ev)=> { if(ev.key==='Enter') showDetail(block.name); });
+
+		grid.appendChild(card);
+	});
+
+	container.appendChild(grid);
+}
+
+async function showDetail(name){
+	const aside = document.getElementById('detail');
+	aside.innerHTML = '<p>Laden…</p>';
+	try{
+		const block = await api.fetchDetail(name);
+		aside.innerHTML = '';
+		const title = el('h2',{}, block.name);
+		const preview = block.createPreview(4,20);
+		const img = block.image ? el('img',{src:block.image, alt:block.name, class:'detail-img'}) : null;
+		const desc = el('p',{}, block.description);
+		const color = el('p',{}, 'Kleur: ', el('span',{class:'color-swatch', style:`background:${block.color}`}, ' '));
+
+		aside.appendChild(title);
+		if (img) aside.appendChild(img);
+		aside.appendChild(preview);
+		aside.appendChild(desc);
+		aside.appendChild(color);
+	}catch(err){
+		aside.innerHTML = '<p class="error">Kon details niet laden.</p>';
+	}
+}
+
+function buildMatrixInputs(container){
+	container.innerHTML = '';
+	for (let r=0;r<4;r++){
+		const row = document.createElement('div'); row.className='matrix-row-input';
+		for (let c=0;c<4;c++){
+			const id = `m-${r}-${c}`;
+			const label = document.createElement('label');
+			label.className='matrix-checkbox';
+			const checkbox = document.createElement('input');
+			checkbox.type='checkbox'; checkbox.name=id; checkbox.value='1';
+			label.appendChild(checkbox);
+			row.appendChild(label);
+		}
+		container.appendChild(row);
+	}
+}
+
+function readMatrixFromInputs(container){
+	const matrix = [];
+	for (let r=0;r<4;r++){
+		const row = [];
+		for (let c=0;c<4;c++){
+			const input = container.querySelector(`input[name="m-${r}-${c}"]`);
+			row.push(input && input.checked ? 1 : 0);
+		}
+		matrix.push(row);
+	}
+	return matrix;
+}
+
+function showAddForm(){
+	document.getElementById('add-form-panel').classList.remove('hidden');
+}
+
+function hideAddForm(){
+	document.getElementById('add-form-panel').classList.add('hidden');
+}
+
+async function init(){
+	const gridContainer = document.getElementById('grid');
+	const matrixInputs = document.getElementById('matrix-inputs');
+	buildMatrixInputs(matrixInputs);
+
+	document.getElementById('show-add-form').addEventListener('click', showAddForm);
+	document.getElementById('cancel-add').addEventListener('click', (e)=>{ hideAddForm(); });
+
+	document.getElementById('add-form').addEventListener('submit', async (ev)=>{
+		ev.preventDefault();
+		const form = ev.target;
+		const fd = new FormData(form);
+		const name = (fd.get('name')||'').toString().trim().toUpperCase();
+		const color = fd.get('color')||'#999999';
+		const description = fd.get('description')||'';
+		const image = fd.get('image')||'';
+		const matrix = readMatrixFromInputs(matrixInputs);
+
+		const payload = {name, color, description, image, matrix};
+
+		try{
+			const created = await api.create(payload);
+			state.blocks.push(created);
+			renderGrid(gridContainer);
+			hideAddForm();
+
+			form.reset();
+			buildMatrixInputs(matrixInputs);
+
+			showDetail(created.name);
+		}catch(err){
+			alert('Fout bij toevoegen: ' + err.message);
+		}
+	});
+
+	try{
+		state.blocks = await api.fetchAll();
+		renderGrid(gridContainer);
+	}catch(err){
+		gridContainer.innerHTML = '<p class="error">Kon blokken niet laden.</p>';
+	}
+}
+
+document.addEventListener('DOMContentLoaded', init);

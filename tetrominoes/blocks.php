@@ -18,8 +18,8 @@
 // Basisconfiguratie
 // ------------------------------------------------------------
 
-// Pad naar het JSON-bestand met blokdata
-const BLOCKS_FILE = __DIR__ . '/blocks.json';
+// Pad naar het JSON-bestand met blokdata (consolidated in `data/`)
+const BLOCKS_FILE = __DIR__ . '/data/blocks.json';
 
 // Eenvoudige CORS headers zodat je dit ook lokaal kunt testen
 header('Access-Control-Allow-Origin: *');
@@ -236,11 +236,51 @@ function handlePost(): void
   // Ondersteun zowel JSON body als form-data
   $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
 
+  // If JSON body, parse JSON. Otherwise use $_POST (form-data / multipart)
   if (stripos($contentType, 'application/json') !== false) {
     $input = readJsonBody();
   } else {
-    // form-data / x-www-form-urlencoded
     $input = $_POST;
+  }
+
+  // If matrix came as JSON string in form-data, decode it
+  if (isset($input['matrix']) && is_string($input['matrix'])) {
+    $decoded = json_decode($input['matrix'], true);
+    if (is_array($decoded)) {
+      $input['matrix'] = $decoded;
+    }
+  }
+
+  // Handle uploaded file (optional)
+  $uploadedImagePath = '';
+  if (isset($_FILES['image_file']) && $_FILES['image_file']['error'] === UPLOAD_ERR_OK) {
+    $u = $_FILES['image_file'];
+    // Basic validation
+    $allowed = ['image/png','image/svg+xml','image/jpeg','image/gif'];
+    $finfoType = mime_content_type($u['tmp_name']);
+    if (!in_array($finfoType, $allowed)) {
+      http_response_code(400);
+      echo json_encode(['error' => 'Ongeldig afbeeldingsformaat']);
+      return;
+    }
+
+    // Ensure images directory exists
+    $imagesDir = __DIR__ . '/images';
+    if (!is_dir($imagesDir)) mkdir($imagesDir, 0755, true);
+
+    $ext = pathinfo($u['name'], PATHINFO_EXTENSION);
+    $safeBase = preg_replace('/[^A-Za-z0-9._-]/', '_', pathinfo($u['name'], PATHINFO_FILENAME));
+    $unique = $safeBase . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+    $target = $imagesDir . '/' . $unique;
+
+    if (!move_uploaded_file($u['tmp_name'], $target)) {
+      http_response_code(500);
+      echo json_encode(['error' => 'Kon bestand niet opslaan']);
+      return;
+    }
+
+    // relative path for client
+    $uploadedImagePath = 'images/' . $unique;
   }
 
   $name        = isset($input['name']) ? strtoupper(trim($input['name'])) : '';
@@ -249,10 +289,15 @@ function handlePost(): void
   $image       = isset($input['image']) ? trim($input['image']) : '';
   $matrix      = $input['matrix'] ?? null;
 
-  // Eenvoudige validatie: image is optional, description optional. Require name, color and matrix.
-  if ($name === '' || $color === '' || $matrix === null) {
+  // If we uploaded a file, prefer that path
+  if ($uploadedImagePath !== '') {
+    $image = $uploadedImagePath;
+  }
+
+  // Eenvoudige validatie
+  if ($name === '' || $color === '' || $description === '' || $image === '' || $matrix === null) {
     http_response_code(400);
-    echo json_encode(['error' => 'Missing required fields (name, color, matrix)']);
+    echo json_encode(['error' => 'Missing required fields (name, color, description, image, matrix)']);
     return;
   }
 
@@ -272,7 +317,14 @@ function handlePost(): void
 
   $blocks = loadBlocks();
 
-  // Allow duplicate names: do not block on existing name
+  // Check of de naam al bestaat
+  foreach ($blocks as $block) {
+    if (strtoupper($block['name']) === $name) {
+      http_response_code(409);
+      echo json_encode(['error' => 'Block with this name already exists']);
+      return;
+    }
+  }
 
   $newBlock = [
     'name'        => $name,
