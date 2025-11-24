@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <script type="module" src="script.js" defer></script>
+    <title>Tetri2</title>
+</head>
+<body>
+    <header>
+        <h1>Tetrominoes</h1>
+    </header>
+
+    <main id="container">
+        <section id="controls">
+            <button id="show-add-form">Nieuw blok toevoegen</button>
+        </section>
+
+        <section id="grid" aria-label="Tetromino overzicht"></section>
+
+        <aside id="detail" aria-live="polite"></aside>
+
+        <section id="add-form-panel" class="hidden">
+            <h2>Voeg een nieuw tetromino toe</h2>
+            <form id="add-form">
+                <label>Naam: <input name="name" required maxlength="2"></label>
+                <label>Kleur: <input name="color" type="color" value="#ff0000" required></label>
+                <label>Beschrijving: <textarea name="description" required></textarea></label>
+                <label>Afbeelding (URL): <input name="image" type="url" placeholder="images/my.svg"></label>
+
+                <fieldset>
+                    <legend>Matrix (4x4)</legend>
+                    <div id="matrix-inputs" class="matrix-inputs"></div>
+                </fieldset>
+
+                <div class="form-actions">
+                    <button type="submit">Verstuur</button>
+                    <button type="button" id="cancel-add">Annuleer</button>
+                </div>
+            </form>
+        </section>
+    </main>
+</body>
+</html>
